@@ -1,0 +1,93 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 1. User Model
+// Covers both Students and Admins using the 'role' field
+model User {
+  id            String        @id @default(cuid())
+  name          String?
+  email         String        @unique
+  role          Role          @default(STUDENT)
+  
+  // --- Moroccan Academic Fields ---
+  apogeeCode    String?       @unique // Code Apogée
+  cin           String?       @unique // National ID
+  cne           String?       @unique // Massar/CNE code
+  studentCard   String?       // URL to the file stored in Vercel Blob
+  
+  // --- Tracking ---
+  // This allows us to quickly see how many demands a student has made
+  demands       Reclamation[] @relation("StudentDemands")
+  handledDemands Reclamation[] @relation("AdminResponses")
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Reclamation {
+  id            String    @id @default(cuid())
+  type        ReclamationType @default(EXAM_REVIEW)
+  subject       String
+  description   String    @db.Text
+  status        Status    @default(PENDING)
+  
+  // Admin Response
+  adminResponse String?   @db.Text
+  
+  // New: Attachments (Supports files from student OR admin)
+  attachments   Attachment[]
+
+  studentId     String
+  student       User      @relation("StudentDemands", fields: [studentId], references: [id])
+  
+  adminId       String?   
+  admin         User?     @relation("AdminResponses", fields: [adminId], references: [id])
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  archivedAt  DateTime?
+
+  @@index([createdAt])
+}
+
+model Attachment {
+  id            String      @id @default(cuid())
+  url           String      // Vercel Blob URL
+  name          String      // Original filename
+  uploadedBy    String      // To distinguish Student vs Admin files
+  reclamationId String
+  reclamation   Reclamation @relation(fields: [reclamationId], references: [id])
+}
+
+enum ReclamationType {
+  EXAM_REVIEW      // Consultation de copie / Note
+  INTERNSHIP       // Problèmes de Stage / CHU
+  ADMINISTRATIVE   // Attestations / Inscriptions
+  OTHER
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+
+enum Status {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+}

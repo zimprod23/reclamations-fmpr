@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import { PrismaClient, Role, Status } from "../lib/generated/prisma/client";
+import { PrismaClient, Role, Status } from "@prisma/client";
 
 const prisma = new PrismaClient({ accelerateUrl: "", log: [] });
 

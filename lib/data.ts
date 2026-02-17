@@ -27,3 +27,19 @@ export async function fetchDashboardStats() {
 
   return { total, pending, resolved };
 }
+
+export async function fetchLatestReclamation(studentId: string) {
+  try {
+    const latest = await prisma.reclamation.findFirst({
+      where: { studentId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    console.log("Latest Reclamation:", latest);
+
+    return latest;
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch the latest reclamation.");
+  }
+}

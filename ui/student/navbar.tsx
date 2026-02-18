@@ -48,7 +48,9 @@ export default function StudentNavbar() {
             <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
           </button>
           <div className="w-10 h-10 bg-gradient-to-tr from-blue-100 to-blue-50 rounded-full flex items-center justify-center border border-blue-200">
+           <Link  href="/student/profile">
             <User className="w-5 h-5 text-blue-600" />
+           </Link>
           </div>
         </div>
       </nav>

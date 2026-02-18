@@ -156,6 +156,16 @@ export default function RegisterForm() {
           >
             {loading ? "Création..." : "Créer mon compte"}
           </button>
+
+          <p className="text-center mt-4 text-sm text-gray-500">
+            Vous avez déjà un compte ?{" "}
+            <a
+              href="/login"
+              className="text-blue-600 font-bold hover:underline"
+            >
+              Connectez-vous
+            </a>
+          </p>
         </form>
       </div>
     </div>

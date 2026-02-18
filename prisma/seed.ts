@@ -1,7 +1,10 @@
 import { faker } from "@faker-js/faker";
-import { PrismaClient, Role, Status } from "../lib/generated/prisma/client";
+import { PrismaClient, Role, Status } from "@prisma/client";
 
-const prisma = new PrismaClient({ accelerateUrl: "", log: [] });
+const prisma = new PrismaClient({
+  accelerateUrl: process.env.PRISMA_DATABASE_URL,
+  log: ["query"], // Useful for debugging: see SQL in your terminal
+});
 
 async function main() {
   console.log("🌱 Seeding database...");

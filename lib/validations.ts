@@ -1,83 +1,63 @@
-// lib/validation.ts
 import { z } from "zod";
 
+// Base category enum
+const MainCategoryEnum = z.enum(["MAIL", "BOURSE", "AUTRE"]);
 
-export const finalReclamationSchema = z.object({
-  mainCategory: z.enum(["MAIL", "BOURSE", "AUTRE"]),
-  subIssue: z.string().optional(),
-  details: z.object({
-    email: z.string().email().optional(),
-    phone: z.string().optional(),
-    message: z.string().optional(),
-  }),
-}).refine((data) => {
-  if (data.mainCategory === "AUTRE") return data.details.message?.length >= 15;
-  if (data.subIssue === "LOST_PHONE") return data.details.phone?.length >= 10;
-  return true;
-}, { message: "Validation échouée pour les champs requis." });
-
-// export const reclamationSchema = z.object({
-//   mainCategory: z.enum(["MAIL", "BOURSE", "AUTRE"], {
-//     required_error: "Veuillez sélectionner une catégorie.",
-//   }),
-//   subIssue: z.string().optional(),
-//   details: z.object({
-//     email: z.string().email("Email institutionnel invalide").optional(),
-//     phone: z.string().min(10, "Numéro de téléphone invalide").optional(),
-//     message: z.string().min(15, "Description trop courte (min. 15 caractères)").optional(),
-//   }),
-// }).refine((data) => {
-//   // AUTRE category requires message
-//   if (data.mainCategory === "AUTRE") return !!data.details.message && data.details.message.length >= 15;
-//   // LOST_PHONE requires phone
-//   if (data.subIssue === "LOST_PHONE") return !!data.details.phone && data.details.phone.length >= 10;
-//   // FORGOT_PWD or NO_ACCOUNT requires email
-//   if (["FORGOT_PWD", "NO_ACCOUNT"].includes(data.subIssue || "")) return !!data.details.email;
-//   return true; // other cases pass
-// }, {
-//   message: "Certains champs requis ne sont pas remplis correctement.",
-// });
-
-// Step 1: pick mainCategory
+// Step 1: Just the category
 export const step1Schema = z.object({
-  mainCategory: z.enum(["MAIL", "BOURSE", "AUTRE"], { required_error: "Veuillez sélectionner une catégorie." }),
+  mainCategory: MainCategoryEnum,
 });
 
-// Step 2: pick subIssue
+// Step 2: The sub-issue (required if not 'AUTRE')
 export const step2Schema = z.object({
-  subIssue: z.string().nonempty("Veuillez préciser le problème."),
+  subIssue: z.string().min(1, "Veuillez préciser la nature du problème."),
 });
 
-// Step 3: final details
-export const step3Schema = z.object({
-  details: z.object({
-    email: z.string().email("Email institutionnel invalide").optional(),
-    phone: z.string().min(10, "Numéro de téléphone invalide").optional(),
-    message: z.string().min(15, "Description trop courte (min. 15 caractères)").optional(),
-  }),
-});
-
-// export const reclamationSchema = z.object({
-//   mainCategory: z.enum(["MAIL", "BOURSE", "AUTRE"], {
-//     required_error: "Veuillez sélectionner une catégorie.",
-//   }),
-//   subIssue: z.string().optional(),
-//   details: z.object({
-//     email: z.string().email("Email institutionnel invalide").optional(),
-//     phone: z
-//       .string()
-//       .min(10, "Numéro de téléphone invalide")
-//       .optional(),
-//     message: z
-//       .string()
-//       .min(15, "Description trop courte (min. 15 caractères)")
-//       .optional(),
-//   }),
-// }).refine((data) => {
-//   // Conditional checks
-//   if (data.mainCategory === "AUTRE") return data.details.message && data.details.message.length >= 15;
-//   if (data.subIssue === "LOST_PHONE") return data.details.phone && data.details.phone.length >= 10;
-//   return true;
-// }, {
-//   message: "Validation échouée pour les champs requis.",
-// });
+// The Final Complete Schema
+export const finalReclamationSchema = z
+  .object({
+    mainCategory: MainCategoryEnum,
+    subIssue: z.string().optional(),
+    details: z.object({
+      email: z
+        .string()
+        .email("Email institutionnel invalide")
+        .optional()
+        .or(z.literal("")),
+      phone: z
+        .string()
+        .min(10, "Numéro de téléphone invalide")
+        .optional()
+        .or(z.literal("")),
+      message: z
+        .string()
+        .min(15, "Veuillez fournir plus de détails (min. 15 caractères)")
+        .optional()
+        .or(z.literal("")),
+    }),
+  })
+  .refine(
+    (data) => {
+      // Logic: If MAIL/FORGOT_PWD or MAIL/NO_ACCOUNT -> Email is required
+      if (
+        data.mainCategory === "MAIL" &&
+        (data.subIssue === "FORGOT_PWD" || data.subIssue === "NO_ACCOUNT")
+      ) {
+        return !!data.details.email && data.details.email.length > 5;
+      }
+      // Logic: If LOST_PHONE -> Phone is required
+      if (data.subIssue === "LOST_PHONE") {
+        return !!data.details.phone && data.details.phone.length >= 10;
+      }
+      // Logic: If AUTRE -> Message is required
+      if (data.mainCategory === "AUTRE") {
+        return !!data.details.message && data.details.message.length >= 15;
+      }
+      return true;
+    },
+    {
+      message:
+        "Veuillez remplir les champs obligatoires pour ce type de demande.",
+      path: ["details"], // Highlighting the details section in errors
+    },
+  );

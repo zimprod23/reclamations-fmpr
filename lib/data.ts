@@ -2,8 +2,8 @@
 // import { getServerSession } from "next-auth";
 // import { authOptions } from "@/lib/auth";
 import { prisma } from "./prisma";
-import {finalReclamationSchema} from "./validations"
-
+import { finalReclamationSchema } from "./validations";
+import { z } from "zod";
 
 // let cachedStudentId: string | null = null;
 
@@ -83,22 +83,34 @@ export async function fetchLatestReclamation(studentId: string) {
   }
 }
 
-
-export async function submitReclamation(data: z.infer<typeof finalReclamationSchema>, studentId: string) {
+export async function getStudentReclamations(studentId: string) {
   try {
-    // const studentId = await getStudentId(); // called per request
-
-    return await prisma.Reclamation.create({
-      data: {
-        studentId,
-        mainCategory: data.mainCategory,
-        subIssue: data.subIssue ?? null,
-        message: data.details.message ?? null,
-        phone: data.details.phone ?? null,
+    const reclamations = await prisma.reclamation.findMany({
+      where: {
+        studentId: studentId,
+      },
+      orderBy: {
+        id: "desc", // Shows newest first
       },
     });
-  } catch (error: any) {
+    return reclamations;
+  } catch (error) {
     console.error("Database Error:", error);
-    throw new Error(error.message || "Impossible d'envoyer la réclamation");
+    throw new Error("Failed to fetch reclamations.");
+  }
+}
+
+export async function getReclamationById(id: string, studentId: string) {
+  try {
+    const reclamation = await prisma.reclamation.findUnique({
+      where: {
+        id: id,
+        studentId: studentId, // Security check!
+      },
+    });
+    return reclamation;
+  } catch (error) {
+    console.error("Database Error:", error);
+    return null;
   }
 }

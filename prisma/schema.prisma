@@ -40,8 +40,8 @@ model User {
 
 model Reclamation {
   id            String    @id @default(cuid())
-  type        ReclamationType @default(EXAM_REVIEW)
-  subject       String
+  type        ReclamationType @default(OTHER)
+  subject       String?
   description   String    @db.Text
   status        Status    @default(PENDING)
   
@@ -61,6 +61,7 @@ model Reclamation {
   updatedAt     DateTime  @updatedAt
 
   archivedAt  DateTime?
+  phone       String?   // For follow-up calls if needed
 
   @@index([createdAt])
 }
@@ -75,10 +76,14 @@ model Attachment {
 }
 
 enum ReclamationType {
-  EXAM_REVIEW      // Consultation de copie / Note
-  INTERNSHIP       // Problèmes de Stage / CHU
-  ADMINISTRATIVE   // Attestations / Inscriptions
-  OTHER
+  MAIL_PWD        // Forgot Password
+  MAIL_PHONE      // Lost Phone / 2FA
+  MAIL_ACTIVATE   // Account not active
+  BOURSE_MINHATY  // Minhaty issues
+  BOURSE_TRANSFER // Transfer issues
+  CERTIFICATE     // Documents/Attestations
+  EXAM_REVIEW     // Grades/Copies
+  OTHER           // General/Ad
 }
 
 enum Role {

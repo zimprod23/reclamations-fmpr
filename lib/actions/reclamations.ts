@@ -70,3 +70,27 @@ export async function submitReclamationAction(
     };
   }
 }
+
+export async function deleteReclamationAction(id: string, studentId: string) {
+  try {
+    const reclamation = await prisma.reclamation.findUnique({
+      where: { id, studentId },
+    });
+
+    if (!reclamation) throw new Error("Demande non trouvée.");
+
+    // Guard: Only allow deletion if status is PENDING
+    if (reclamation.status !== "PENDING") {
+      throw new Error("Impossible de supprimer une demande déjà traitée.");
+    }
+
+    await prisma.reclamation.delete({
+      where: { id },
+    });
+
+    revalidatePath("/student/reclamations");
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}

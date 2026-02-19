@@ -1,14 +1,19 @@
+"use client";
+
 import Link from "next/link";
 import {
   Home,
   PlusCircle,
   History,
   User,
-  Bell,
+  LogOut,
   GraduationCap,
 } from "lucide-react";
+import { signOut } from "next-auth/react";
 
 export default function StudentNavbar() {
+  const handleLogout = () => signOut({ callbackUrl: "/login" });
+
   return (
     <>
       {/* DESKTOP HEADER */}
@@ -43,15 +48,28 @@ export default function StudentNavbar() {
             Nouvelle Réclamation
           </Link>
           <div className="h-8 w-[1px] bg-gray-100" />
+
+          {/* Notification Icon Commented Out
           <button className="relative p-2 text-gray-400 hover:text-blue-600">
             <Bell className="w-6 h-6" />
             <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
           </button>
-          <div className="w-10 h-10 bg-gradient-to-tr from-blue-100 to-blue-50 rounded-full flex items-center justify-center border border-blue-200">
-           <Link  href="/student/profile">
+          */}
+
+          <Link
+            href="/student/profile"
+            className="w-10 h-10 bg-gradient-to-tr from-blue-100 to-blue-50 rounded-full flex items-center justify-center border border-blue-200 hover:border-blue-400 transition-colors"
+          >
             <User className="w-5 h-5 text-blue-600" />
-           </Link>
-          </div>
+          </Link>
+
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-sm font-bold text-red-500 hover:text-red-700 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Quitter
+          </button>
         </div>
       </nav>
 
@@ -69,15 +87,22 @@ export default function StudentNavbar() {
         >
           <History className="w-6 h-6" />
         </Link>
+
         <Link
           href="/student/new"
-          className="bg-blue-600 p-3 rounded-full -mt-12 border-4 border-gray-50 shadow-xl"
+          className="bg-blue-600 p-3 rounded-full -mt-12 border-4 border-white shadow-xl"
         >
           <PlusCircle className="w-7 h-7 text-white" />
         </Link>
-        <button className="text-white/60 hover:text-white transition-colors">
-          <Bell className="w-6 h-6" />
+
+        {/* Mobile Notification swapped for Logout */}
+        <button
+          onClick={handleLogout}
+          className="text-white/60 hover:text-red-400 transition-colors"
+        >
+          <LogOut className="w-6 h-6" />
         </button>
+
         <Link
           href="/student/profile"
           className="text-white/60 hover:text-white transition-colors"

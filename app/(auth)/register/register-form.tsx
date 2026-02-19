@@ -10,6 +10,7 @@ import {
   User,
   Fingerprint,
   Hash,
+  ShieldCheck, // Added new icon
 } from "lucide-react";
 
 export default function RegisterForm() {
@@ -24,6 +25,13 @@ export default function RegisterForm() {
 
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData);
+
+    // 1. Client-side matching check
+    if (data.password !== data.confirmPassword) {
+      setError("Les mots de passe ne correspondent pas.");
+      setLoading(false);
+      return;
+    }
 
     const res = await registerStudent(data);
 
@@ -51,12 +59,13 @@ export default function RegisterForm() {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold border border-red-100 italic">
+          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold border border-red-100 italic animate-shake">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* ... Name and Email grid stays same ... */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
@@ -89,6 +98,7 @@ export default function RegisterForm() {
             </div>
           </div>
 
+          {/* ... CIN, CNE, Apogee grid stays same ... */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">
               <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
@@ -134,19 +144,39 @@ export default function RegisterForm() {
             </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
-              Mot de passe
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 w-4 h-4" />
-              <input
-                required
-                name="password"
-                type="password"
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none"
-                placeholder="••••••••"
-              />
+          {/* NEW: Passwords Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
+                Mot de passe
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 w-4 h-4" />
+                <input
+                  required
+                  name="password"
+                  type="password"
+                  minLength={8}
+                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase text-gray-400 ml-2">
+                Confirmer
+              </label>
+              <div className="relative">
+                <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 w-4 h-4" />
+                <input
+                  required
+                  name="confirmPassword"
+                  type="password"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="••••••••"
+                />
+              </div>
             </div>
           </div>
 

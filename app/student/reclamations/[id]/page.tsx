@@ -12,6 +12,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import DeleteReclamationButton from "@/ui/student/delete-button";
 
 export default async function ReclamationDetailPage({
   params,
@@ -37,6 +38,21 @@ export default async function ReclamationDetailPage({
       >
         <ArrowLeft size={14} /> Retour à l'historique
       </Link>
+
+      {/* <div className="flex items-center justify-end min-h-[40px]">
+        {reclamation.status === "PENDING" ? (
+          <DeleteReclamationButton
+            id={reclamation.id}
+            studentId={session.user.id}
+          />
+        ) : (
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-50 border border-gray-100 opacity-60">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              Dossier Verrouillé
+            </span>
+          </div>
+        )}
+      </div> */}
 
       {/* STUDENT REQUEST CARD */}
       <div className="bg-white border border-gray-100 rounded-[2.5rem] shadow-xl shadow-blue-900/5 overflow-hidden">

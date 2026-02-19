@@ -13,13 +13,13 @@ import clsx from "clsx";
 
 // Links for Admin vs Student
 const adminLinks = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Manage Demands", href: "/manage", icon: FileText },
+  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+  { name: "Manage Demands", href: "/admin/manage", icon: FileText },
 ];
 
 const studentLinks = [
-  { name: "My Demands", href: "/dashboard", icon: LayoutDashboard },
-  { name: "New Demand", href: "/submit", icon: PlusCircle },
+  { name: "My Demands", href: "/student/dashboard", icon: LayoutDashboard },
+  { name: "New Demand", href: "/student/submit", icon: PlusCircle },
 ];
 
 export default function NavLinks({ role }: { role: "ADMIN" | "STUDENT" }) {

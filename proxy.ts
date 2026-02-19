@@ -6,30 +6,25 @@ export default withAuth(
     const token = req.nextauth.token;
     const { pathname } = req.nextUrl;
 
-    const isAuth = !!token;
     const isAuthPage =
-      pathname.startsWith("/login") ||
-      pathname.startsWith("/register");
+      pathname.startsWith("/login") || pathname.startsWith("/register");
+    const isAdminRoute = pathname.startsWith("/admin");
+    const isStudentRoute = pathname.startsWith("/student");
 
-    // 🚫 Not logged in → block protected routes
-    if (!isAuth && (pathname.startsWith("/student") || pathname.startsWith("/admin"))) {
-      return NextResponse.redirect(new URL("/login", req.url));
+    // 1. Handle authenticated users visiting Login/Register
+    if (isAuthPage && token) {
+      const dashboard =
+        token.role === "ADMIN" ? "/admin/dashboard" : "/student/dashboard";
+      return NextResponse.redirect(new URL(dashboard, req.url));
     }
 
-    // 🚫 Logged in → prevent visiting login/register
-    if (isAuth && isAuthPage) {
-      if (token?.role === "ADMIN") {
-        return NextResponse.redirect(new URL("/admin/dashboard", req.url));
-      }
+    // 2. Role-Based Protection: Admin Routes
+    if (isAdminRoute && token?.role !== "ADMIN") {
       return NextResponse.redirect(new URL("/student/dashboard", req.url));
     }
 
-    // 🔐 Role protection
-    if (pathname.startsWith("/admin") && token?.role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/student/dashboard", req.url));
-    }
-
-    if (pathname.startsWith("/student") && token?.role !== "STUDENT") {
+    // 3. Role-Based Protection: Student Routes
+    if (isStudentRoute && token?.role !== "STUDENT") {
       return NextResponse.redirect(new URL("/admin/dashboard", req.url));
     }
 
@@ -37,11 +32,26 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: () => true,
+      authorized: ({ token, req }) => {
+        const { pathname } = req.nextUrl;
+
+        // Public paths that don't require a token
+        if (
+          pathname.startsWith("/login") ||
+          pathname.startsWith("/register") ||
+          pathname === "/"
+        ) {
+          return true;
+        }
+
+        // All other paths (Admin/Student) require a valid token
+        return !!token;
+      },
     },
-  }
+  },
 );
 
+// This defines which routes the middleware will run on
 export const config = {
-  matcher: ["/student/:path*", "/admin/:path*", "/login", "/register"],
+  matcher: ["/admin/:path*", "/student/:path*", "/login", "/register"],
 };

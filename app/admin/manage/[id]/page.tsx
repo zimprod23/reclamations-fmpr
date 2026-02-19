@@ -86,7 +86,7 @@ export default async function DetailPage({
                 />
                 <DossierItem
                   label="Contact Officiel"
-                  value={student.phone}
+                  value={student.email}
                   icon={<User size={16} />}
                 />
               </div>

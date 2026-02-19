@@ -9,7 +9,7 @@ import { fr } from "date-fns/locale";
 // Define the type based on your Prisma model to fix "Property does not exist"
 interface Reclamation {
   id: string;
-  subject: string;
+  subject: string | null;
   status: "PENDING" | "IN_PROGRESS" | "RESOLVED" | "REJECTED";
   createdAt: Date;
   type: string; // Adjusted based on your error log
@@ -72,7 +72,7 @@ export default function LatestStatus({ latest }: LatestStatusProps) {
               {latest.type}
             </div>
             <h3 className="text-2xl font-black text-gray-900 leading-tight italic uppercase">
-              {latest.subject}
+              {latest.subject || "Sans sujet"}
             </h3>
             <div className="flex items-center gap-2 text-gray-400 text-xs font-medium">
               <Clock size={14} />

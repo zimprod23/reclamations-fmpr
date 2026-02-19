@@ -16,10 +16,10 @@ import Search from "@/ui/admin/search";
 export default async function ManagePage({
   searchParams,
 }: {
-  searchParams?: { query?: string; page?: string };
+  searchParams?: Promise<{ query?: string; page?: string }>;
 }) {
-  const query = searchParams?.query || "";
-  const currentPage = Number(searchParams?.page) || 1;
+  const query = (await searchParams)?.query || "";
+  const currentPage = Number((await searchParams)?.page) || 1;
 
   const { reclamations, totalPages, totalCount } =
     await getFilteredReclamations(query, currentPage);

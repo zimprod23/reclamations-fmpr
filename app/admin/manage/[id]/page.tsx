@@ -1,17 +1,22 @@
-import { reclamations, users } from "@/lib/placeholder-data";
+import { getReclamationByIdForAdmin } from "@/lib/data";
+import { updateReclamationStatus } from "@/lib/actions/reclamations";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
   User,
   FileText,
-  Send,
   GraduationCap,
   CreditCard,
-  Paperclip,
-  FileIcon,
-  X,
+  Phone,
+  History,
+  MessageSquare,
+  Fingerprint,
+  Calendar,
+  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { Status } from "@prisma/client";
+import ActionButtons from "@/ui/admin/action-button";
 
 export default async function DetailPage({
   params,
@@ -19,153 +24,263 @@ export default async function DetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const reclamation = reclamations.find((r) => r.id === id);
-  const student = users.find((u) => u.id === reclamation?.studentId);
+  const reclamation = await getReclamationByIdForAdmin(id);
 
-  if (!reclamation || !student) notFound();
+  if (!reclamation) notFound();
+  const student = reclamation.student;
 
   return (
-    // Removed max-w-4xl to allow full use of the layout's p-12 padding
-    <div className="w-full space-y-6">
-      {/* Navigation Header */}
-      <div className="flex items-center justify-between">
-        <Link
-          href="/admin/manage"
-          className="flex items-center text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" /> Retour à la gestion
-        </Link>
-        <span
-          className={`px-3 py-1 rounded-full text-xs font-bold ${
-            reclamation.status === "PENDING"
-              ? "bg-amber-100 text-amber-700"
-              : "bg-emerald-100 text-emerald-700"
-          }`}
-        >
-          Status: {reclamation.status}
-        </span>
-      </div>
-
-      {/* Main Grid: Responsive stack on mobile, 3-columns on desktop */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-        {/* Left Section: Student Profile Card */}
-        <div className="xl:col-span-1 space-y-6">
-          <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
-            <div className="flex flex-col items-center text-center mb-6">
-              <div className="h-20 w-20 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-                <User className="w-10 h-10 text-blue-600" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">
-                {student.name}
-              </h2>
-              <p className="text-sm text-gray-500">{student.email}</p>
-            </div>
-
-            <div className="space-y-4 border-t border-gray-100 pt-6">
-              <div className="flex items-center gap-3 text-sm">
-                <GraduationCap className="w-4 h-4 text-gray-400" />
-                <p>
-                  <span className="text-gray-500">Apogée:</span>{" "}
-                  <span className="font-mono font-medium">
-                    {student.apogeeCode}
-                  </span>
-                </p>
-              </div>
-              <div className="flex items-center gap-3 text-sm">
-                <CreditCard className="w-4 h-4 text-gray-400" />
-                <p>
-                  <span className="text-gray-500">CNE:</span>{" "}
-                  <span className="font-mono font-medium">{student.cne}</span>
-                </p>
-              </div>
-              <div className="flex items-center gap-3 text-sm">
-                <CreditCard className="w-4 h-4 text-gray-400" />
-                <p>
-                  <span className="text-gray-500">CIN:</span>{" "}
-                  <span className="font-mono font-medium">{student.cin}</span>
-                </p>
-              </div>
-            </div>
-
-            <a
-              href={student.studentCardUrl}
-              target="_blank"
-              className="mt-8 block w-full text-center py-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-all"
-            >
-              Voir la carte d'étudiant
-            </a>
-          </div>
+    <div className="w-full space-y-8 pb-20 animate-in fade-in duration-700">
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-gray-100 pb-8">
+        <div>
+          <Link
+            href="/admin/manage"
+            className="group flex items-center text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-blue-600 transition-all mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+            Retour au Dashboard
+          </Link>
+          <h1 className="text-3xl font-black text-gray-900 italic uppercase tracking-tighter">
+            Dossier <span className="text-blue-600">Académique</span>
+          </h1>
         </div>
 
-        {/* Right Section: Content & Action */}
-        <div className="xl:col-span-3 space-y-8">
-          {/* Reclamation Content */}
-          <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
-            <div className="flex items-start justify-between mb-6">
-              <div>
-                <h2 className="text-sm font-semibold text-blue-600 uppercase tracking-wider mb-1">
-                  Détails de l'objet
-                </h2>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {reclamation.subject}
-                </h1>
+        <div className="flex items-center gap-4 bg-white p-2 rounded-[1.5rem] shadow-sm border border-gray-100">
+          <StatusBadge status={reclamation.status} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* SIDEBAR: STUDENT PROFILE */}
+        <aside className="lg:col-span-4 space-y-6 lg:sticky lg:top-8">
+          <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl shadow-gray-200/40 overflow-hidden">
+            <div className="bg-gray-900 p-8 text-white relative">
+              <div className="absolute top-4 right-4 opacity-20">
+                <Fingerprint size={48} />
               </div>
-              <FileText className="w-8 h-8 text-gray-200" />
+              <h2 className="text-2xl font-black italic uppercase leading-tight mb-1">
+                {student.name}
+              </h2>
+              <p className="text-blue-400 text-xs font-bold font-mono">
+                {student.email}
+              </p>
             </div>
-            <div className="prose prose-blue max-w-none">
-              <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap">
-                {reclamation.description}
+
+            <div className="p-8 space-y-4">
+              <div className="grid grid-cols-1 gap-3">
+                <DossierItem
+                  label="Apogée"
+                  value={student.apogeeCode}
+                  icon={<GraduationCap size={16} />}
+                />
+                <DossierItem
+                  label="CNE"
+                  value={student.cne}
+                  icon={<CreditCard size={16} />}
+                />
+                <DossierItem
+                  label="CIN"
+                  value={student.cin}
+                  icon={<Fingerprint size={16} />}
+                />
+                <DossierItem
+                  label="Contact Officiel"
+                  value={student.phone}
+                  icon={<User size={16} />}
+                />
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-gray-50 flex items-center justify-between">
+                <div>
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                    Total Demandes
+                  </p>
+                  <p className="text-4xl font-black text-gray-900 italic">
+                    {student._count.demands}
+                  </p>
+                </div>
+                {student.studentCard && (
+                  <Link
+                    href={student.studentCard}
+                    target="_blank"
+                    className="w-12 h-12 flex items-center justify-center bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-lg shadow-blue-50"
+                  >
+                    <FileText size={20} />
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* History Sidebar with Status Coloring */}
+          <div className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-6 flex items-center gap-2 italic">
+              <History size={16} className="text-blue-600" /> Historique récent
+            </h3>
+            <div className="space-y-4">
+              {student.demands.map((d) => (
+                <Link
+                  key={d.id}
+                  href={`/admin/manage/${d.id}`}
+                  className={`group block p-4 rounded-2xl transition-all border ${
+                    d.id === id
+                      ? "bg-blue-50 border-blue-200 shadow-inner"
+                      : getHistoryStyle(d.status)
+                  }`}
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <p className="text-[9px] font-black text-gray-400 uppercase">
+                      {new Date(d.createdAt).toLocaleDateString()}
+                    </p>
+                    <span className="text-[8px] font-bold opacity-70 uppercase tracking-tighter">
+                      {d.status}
+                    </span>
+                  </div>
+                  <p className="text-xs font-bold text-gray-800 truncate italic uppercase tracking-tighter">
+                    {d.subject || d.type}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        {/* MAIN CONTENT AREA */}
+        <main className="lg:col-span-8 space-y-8">
+          <div className="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-xl shadow-gray-200/30">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
+                  <MessageSquare size={28} />
+                </div>
+                <div>
+                  <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] italic">
+                    Catégorie: {reclamation.type.replace(/_/g, " ")}
+                  </span>
+                  <h2 className="text-4xl font-black text-gray-900 italic uppercase tracking-tighter leading-none">
+                    {reclamation.subject}
+                  </h2>
+                </div>
+              </div>
+
+              {/* Specific phone cited in the reclamation */}
+              {reclamation.phone && (
+                <div className="flex items-center gap-3 px-5 py-3 bg-amber-50 border border-amber-100 rounded-2xl">
+                  <AlertCircle className="text-amber-600" size={18} />
+                  <div>
+                    <p className="text-[8px] font-black text-amber-600 uppercase">
+                      Tel. Concerné
+                    </p>
+                    <p className="text-xs font-bold text-amber-900 font-mono">
+                      {reclamation.phone}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-gray-50/50 p-10 rounded-[2.5rem] border border-gray-100 min-h-[200px]">
+              <p className="text-gray-700 text-xl font-medium leading-relaxed whitespace-pre-wrap italic">
+                "{reclamation.description}"
               </p>
             </div>
           </div>
 
-          {/* Admin Response Section */}
-          <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm ring-1 ring-blue-50">
-            <h2 className="text-lg font-bold text-gray-900 mb-4 font-sans">
-              Réponse officielle
+          {/* Response Area */}
+          <div
+            className={`bg-white p-10 rounded-[3rem] border-2 shadow-2xl transition-all duration-700 ${
+              reclamation.status === "RESOLVED"
+                ? "border-emerald-100 shadow-emerald-900/5"
+                : reclamation.status === "REJECTED"
+                  ? "border-rose-100 shadow-rose-900/5"
+                  : "border-blue-50 shadow-blue-900/10"
+            }`}
+          >
+            <h2 className="text-2xl font-black text-gray-900 italic uppercase tracking-tighter mb-8 leading-none">
+              Réponse Officielle
             </h2>
 
-            <div className="relative">
-              <textarea
-                className="w-full p-5 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none min-h-[200px] text-base transition-all bg-gray-50/50"
-                placeholder="Saisissez les conclusions de l'administration..."
-              ></textarea>
-
-              {/* Attachment Preview (UI Placeholder) */}
-              <div className="mt-4 flex flex-wrap gap-2">
-                <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 px-3 py-2 rounded-lg text-sm text-blue-700">
-                  <FileIcon className="w-4 h-4" />
-                  <span className="font-medium">decision_commission.pdf</span>
-                  <button className="hover:text-red-500 transition-colors">
-                    <X className="w-4 h-4" />
-                  </button>
+            <form
+              action={async (formData) => {
+                "use server";
+                await updateReclamationStatus(reclamation.id, formData);
+              }}
+              className="space-y-8"
+            >
+              <div className="relative group">
+                <textarea
+                  name="response"
+                  defaultValue={reclamation.adminResponse || ""}
+                  required
+                  className="w-full p-10 bg-gray-50/50 border-2 border-gray-100 rounded-[3rem] focus:ring-[1rem] focus:ring-blue-50 focus:border-blue-600 focus:bg-white outline-none min-h-[350px] text-xl font-medium transition-all shadow-inner"
+                  placeholder="Tapez la décision finale ici..."
+                />
+                <div className="absolute bottom-8 right-10 flex items-center gap-2 text-[10px] font-black text-gray-300 uppercase italic">
+                  <Fingerprint size={12} /> Signé Admin FMPR
                 </div>
               </div>
-            </div>
 
-            <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-100 pt-6">
-              {/* File Upload Button */}
-              <label className="flex items-center gap-2 px-4 py-2 cursor-pointer text-gray-600 hover:bg-gray-100 rounded-lg transition-colors group">
-                <Paperclip className="w-5 h-5 group-hover:text-blue-600" />
-                <span className="text-sm font-medium">
-                  Joindre un document (PDF, JPG)
-                </span>
-                <input type="file" className="hidden" />
-              </label>
-
-              <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                <button className="px-6 py-3 text-sm font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors text-center">
-                  Rejeter la demande
-                </button>
-                <button className="flex items-center justify-center gap-2 px-10 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 transition-all">
-                  <Send className="w-4 h-4" />
-                  Envoyer et clôturer
-                </button>
-              </div>
-            </div>
+              <ActionButtons isUpdate={reclamation.status !== "PENDING"} />
+            </form>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
+}
+
+// LOCAL HELPERS
+function DossierItem({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string | null;
+  icon: any;
+}) {
+  return (
+    <div className="flex items-center gap-4 p-4 bg-white border border-gray-50 rounded-2xl hover:border-blue-100 transition-all">
+      <div className="text-gray-300 bg-gray-50 p-2.5 rounded-xl">{icon}</div>
+      <div>
+        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">
+          {label}
+        </p>
+        <p className="text-[13px] font-bold text-gray-900 font-mono">
+          {value || "---"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: Status }) {
+  const styles: Record<Status, string> = {
+    PENDING: "bg-amber-100 text-amber-700 border-amber-200",
+    IN_PROGRESS: "bg-blue-100 text-blue-700 border-blue-200",
+    RESOLVED: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    REJECTED: "bg-rose-100 text-rose-700 border-rose-200",
+  };
+  return (
+    <div
+      className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase italic border ${styles[status]} flex items-center gap-2`}
+    >
+      <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+      {status}
+    </div>
+  );
+}
+
+function getHistoryStyle(status: Status) {
+  switch (status) {
+    case "RESOLVED":
+      return "bg-emerald-50/30 border-emerald-100 hover:bg-emerald-50/50";
+    case "REJECTED":
+      return "bg-rose-50/30 border-rose-100 hover:bg-rose-50/50";
+    case "PENDING":
+      return "bg-amber-50/30 border-amber-100 hover:bg-amber-50/50";
+    default:
+      return "bg-white border-transparent hover:bg-gray-50";
+  }
 }

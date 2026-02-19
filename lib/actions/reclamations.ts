@@ -4,26 +4,26 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { finalReclamationSchema } from "../validations";
-import { ReclamationType } from "@prisma/client";
+import { ReclamationType, Status } from "@prisma/client";
 
-export async function updateReclamationStatus(
-  id: string,
-  status: any,
-  response: string,
-) {
-  await prisma.reclamation.update({
-    where: { id },
-    data: {
-      status,
-      adminResponse: response,
-      updatedAt: new Date(),
-    },
-  });
+// export async function updateReclamationStatus(
+//   id: string,
+//   status: any,
+//   response: string,
+// ) {
+//   await prisma.reclamation.update({
+//     where: { id },
+//     data: {
+//       status,
+//       adminResponse: response,
+//       updatedAt: new Date(),
+//     },
+//   });
 
-  // This clears the cache so the admin sees the updated list immediately
-  revalidatePath("/admin/manage");
-  revalidatePath(`/demands/${id}`);
-}
+//   // This clears the cache so the admin sees the updated list immediately
+//   revalidatePath("/admin/manage");
+//   revalidatePath(`/demands/${id}`);
+// }
 
 export async function submitReclamationAction(
   values: any,
@@ -55,7 +55,7 @@ export async function submitReclamationAction(
       data: {
         studentId,
         type: finalType as ReclamationType,
-        description: details.message || `Demande: ${subIssue || mainCategory}`,
+        description: `${details.message || `Demande: ${subIssue || mainCategory}`}${details.email ? `\nEmail: ${details.email}` : ""}`,
         phone: details.phone || null,
         status: "PENDING",
         subject: subIssue || mainCategory || "Nouvelle Demande",
@@ -92,5 +92,37 @@ export async function deleteReclamationAction(id: string, studentId: string) {
     return { success: true };
   } catch (error: any) {
     return { error: error.message };
+  }
+}
+
+export async function updateReclamationStatus(id: string, formData: FormData) {
+  // Extract values directly from formData
+  const response = formData.get("response") as string;
+  const action = formData.get("action") as string;
+
+  let newStatus: Status;
+  if (action === "REJECT") {
+    newStatus = Status.REJECTED;
+  } else {
+    newStatus = Status.RESOLVED;
+  }
+
+  try {
+    await prisma.reclamation.update({
+      where: { id },
+      data: {
+        adminResponse: response,
+        status: newStatus,
+        updatedAt: new Date(),
+      },
+    });
+
+    revalidatePath(`/admin/manage/${id}`);
+    revalidatePath("/admin/manage");
+
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    return { error: "Failed to update." };
   }
 }

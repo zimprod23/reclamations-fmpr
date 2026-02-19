@@ -242,3 +242,30 @@ export async function getFilteredReclamations(query: string, page: number = 1) {
     throw new Error("Failed to fetch reclamations.");
   }
 }
+
+// lib/data.ts
+export async function getReclamationByIdForAdmin(id: string) {
+  try {
+    const reclamation = await prisma.reclamation.findUnique({
+      where: { id },
+      include: {
+        student: {
+          include: {
+            _count: {
+              select: { demands: true }, // Gets the total number of reclamations
+            },
+            demands: {
+              orderBy: { createdAt: "desc" },
+              take: 5, // Just show the last 5 for the sidebar
+            },
+          },
+        },
+        attachments: true,
+      },
+    });
+    return reclamation;
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch reclamation details.");
+  }
+}

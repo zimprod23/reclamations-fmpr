@@ -126,3 +126,28 @@ export async function updateReclamationStatus(id: string, formData: FormData) {
     return { error: "Failed to update." };
   }
 }
+
+export async function flushReclamations() {
+  await prisma.reclamation.deleteMany({});
+  revalidatePath("/admin/dashboard");
+}
+
+// 2. Archive handled (RESOLVED/REJECTED) demands
+export async function archiveHandledDemands() {
+  const handled = await prisma.reclamation.findMany({
+    where: {
+      status: { in: ["RESOLVED", "REJECTED"] },
+      archivedAt: null,
+    },
+  });
+
+  if (handled.length === 0) return { message: "Rien à archiver" };
+
+  await prisma.reclamation.updateMany({
+    where: { id: { in: handled.map((h) => h.id) } },
+    data: { archivedAt: new Date() },
+  });
+
+  revalidatePath("/admin/dashboard");
+  return { message: `${handled.length} demandes archivées` };
+}
